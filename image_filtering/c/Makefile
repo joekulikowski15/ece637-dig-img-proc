@@ -11,7 +11,7 @@ all: filter_image_section3
 clean:
 	/bin/rm *.o $(BIN)/*
 
-OBJ = $(LICENSED)/tiff.o $(LICENSED)/allocate.o $(LICENSED)/randlib.o $(LICENSED)/qGGMRF.o $(LICENSED)/solve.o
+OBJ = $(LICENSED)/tiff.o $(LICENSED)/allocate.o $(LICENSED)/randlib.o $(LICENSED)/qGGMRF.o $(LICENSED)/solve.o src/convolve2DFB.o
 
 filter_image_section3: $(SRC)/filter_image_section3.o $(OBJ) 
 	$(CC) $(CFLAGS) -o $(SRC)/filter_image_section3.out $(SRC)/filter_image_section3.o $(OBJ) -lm 

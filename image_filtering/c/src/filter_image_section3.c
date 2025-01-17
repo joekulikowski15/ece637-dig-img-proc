@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include "convolve2DFB.h"
 #include "tiff.h"
 #include "allocate.h"
 #include "randlib.h"
@@ -8,9 +9,6 @@
 void error(char *name);
 void print_2D_double(int32_t rows, int32_t cols, double **arr);
 void print_2D_int(int32_t rows, int32_t cols, int32_t **arr);
-void convolve2D_FB(int32_t M_rows, int32_t N_cols, int32_t K_rows, 
-                    int32_t L_cols, double **image, double **filter,
-                    double **filtered);
 void clip(int32_t M_rows, int32_t N_cols, double **img);
 
 int32_t main (int32_t argc, char **argv) 
@@ -85,11 +83,11 @@ int32_t main (int32_t argc, char **argv)
   }
 
   /* Convolve the filter with each color, perform clipping.*/
-  convolve2D_FB(input_img.height, input_img.width, filter_size, filter_size, red_arr, filter, filt_red);
-  convolve2D_FB(input_img.height, input_img.width, filter_size, filter_size, green_arr, filter, filt_green);
-  convolve2D_FB(input_img.height, input_img.width, filter_size, filter_size, blue_arr, filter, filt_blue);
+  convolve2DFB(input_img.height, input_img.width, filter_size, filter_size, red_arr, filter, filt_red);
+  convolve2DFB(input_img.height, input_img.width, filter_size, filter_size, green_arr, filter, filt_green);
+  convolve2DFB(input_img.height, input_img.width, filter_size, filter_size, blue_arr, filter, filt_blue);
 
-  /* Clip and convert */
+  /* Clip */
   clip(input_img.height, input_img.width, filt_red);
   clip(input_img.height, input_img.width, filt_green);
   clip(input_img.height, input_img.width, filt_blue);
