@@ -59,7 +59,7 @@ ax1.set_zlabel(r"$|H(e^{j \mu}, e^{j \nu})|$")
 ax1.set_xlabel(r"$\mu$")
 ax1.set_ylabel(r"$\nu$")
 fig1.set_size_inches(8, 5)
-fig1.savefig(os.path.join(this_dir,"..","images","DSFTmag3D.jpg", dpi=2000))
+fig1.savefig(os.path.join(this_dir,"..","images","DSFTmag3D.jpg"), dpi=2000)
 
 plt.rcParams["figure.figsize"] = (5,8)
 HHplot_negpi_pi = np.copy(HH)

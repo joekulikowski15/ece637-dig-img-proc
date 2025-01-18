@@ -56,21 +56,11 @@ int32_t main (int32_t argc, char **argv)
   filt_blue = (double **)get_img(input_img.width,input_img.height,sizeof(double));
 
 
-  /* copy red component to double array */
+  /* copy RGB components to double array */
   for ( i = 0; i < input_img.height; i++ )
   for ( j = 0; j < input_img.width; j++ ) {
     red_arr[i][j] = input_img.color[0][i][j];
-  }
-
-  /* copy green component to double array */
-  for ( i = 0; i < input_img.height; i++ )
-  for ( j = 0; j < input_img.width; j++ ) {
     green_arr[i][j] = input_img.color[1][i][j];
-  }
-
-  /* copy blue component to double array */
-  for ( i = 0; i < input_img.height; i++ )
-  for ( j = 0; j < input_img.width; j++ ) {
     blue_arr[i][j] = input_img.color[2][i][j];
   }
 
