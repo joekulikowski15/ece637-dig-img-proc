@@ -19,10 +19,17 @@ int32_t main (int32_t argc, char **argv)
   double **red_arr, **green_arr, **blue_arr, **filter;
   double **filt_red, **filt_green, **filt_blue;
   int32_t i, j;
-  int8_t filter_size = 9;
-  char *out_file = "../images/FIR_LPF_filtered.tif";
+  int8_t filter_size = 5, ax_offset;
+  char *float_con_err;
+  double lambda, h;
+  char out_file[100];
 
-  if ( argc != 2 ) error( argv[0] );
+  
+  /*
+  3 input args. the name of the file, the name of the
+  input image file, and the lambda value.
+  */
+  if ( argc != 3 ) error( argv[0] );
 
   /* open image file */
   if ( ( fp = fopen ( argv[1], "rb" ) ) == NULL ) {
@@ -39,6 +46,16 @@ int32_t main (int32_t argc, char **argv)
   /* close image file */
   fclose ( fp );
 
+  /* convert command line argument to float */
+  lambda = strtof(argv[2], &float_con_err);
+  if(*float_con_err != '\0'){
+    fprintf(stderr, "error reading input lambda to float %s\n", argv[2]); 
+  }
+
+  /* Name output file based on lambda input. */
+  snprintf(out_file, sizeof(out_file), "../images/sharp_lambda_%f_.tif", lambda);
+  
+
   /* check the type of image data */
   if ( input_img.TIFF_type != 'c' ) {
     fprintf ( stderr, "error:  image must be 24-bit color\n" );
@@ -46,6 +63,7 @@ int32_t main (int32_t argc, char **argv)
   }
 
   /* Allocate doubles for processing. */
+
   filter = (double **) get_img(filter_size, filter_size, sizeof(double));
   red_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
   green_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
@@ -64,10 +82,19 @@ int32_t main (int32_t argc, char **argv)
   }
 
   /* Filter the image! */
-  /* Generate the filter in the problem statement */
-  for (i=0; i<filter_size; i++){
-    for (j=0; j<filter_size; j++){
-      filter[i][j] = 1./81.;
+  /* Generate the filter in the problem statement:
+  */
+  h = 1./25;
+  ax_offset = filter_size/2;
+  for (i=-ax_offset; i<=ax_offset; i++){
+    for (j=-ax_offset; j<=ax_offset; j++){
+      if (i == 0 && j == 0){
+        filter[i + ax_offset][j + ax_offset] = 
+          1. + lambda * (1. - h);
+      } else{
+        filter[i + ax_offset][j + ax_offset] = 
+          -h * lambda;
+      }
     }
   }
 
@@ -94,7 +121,7 @@ int32_t main (int32_t argc, char **argv)
     }
   }
   
-  /* Try and open the file, error if can't. */
+    /* Try and open the file, error if can't. */
   if ((fp = fopen(out_file, "wb")) == NULL){
     fprintf(stderr, "cannot open file %s\n", out_file);
     exit(1);
@@ -176,3 +203,4 @@ void print_2D_int(int32_t rows, int32_t cols, int32_t **arr) {
   }
   printf("]\n");
 }
+
