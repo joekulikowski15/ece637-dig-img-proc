@@ -7,8 +7,6 @@
 Author: Joseph K. Kulikowski
 Perform 2D convolution enforcing  free boundary conditions
 on an M_rows x N_cols image with a K_rows x L_cols filter.
-
-Filter MUST be odd shaped in both direcitons.
 */
 
 void convolve2DFB(int32_t M_rows, /* Height of the input image. */
