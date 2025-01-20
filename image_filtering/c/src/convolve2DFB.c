@@ -8,13 +8,31 @@ void convolve2DFB(int32_t M_rows, int32_t N_cols, int32_t K_rows,
   Perform 2D convolution enforcing  free boundary conditions
   on an M_rows x N_cols image with a K_rows x L_cols filter.
   
-  Filter MUST be odd shaped in both direcitons.
+  Filter can be odd or even shaped.
   */
   int32_t m, n, k, l, row_offset, col_offset;
   int32_t filtered_row, filtered_col, filter_row, filter_col;
   double sum;
-  row_offset = K_rows/2;
-  col_offset = L_cols/2;
+  /*
+  The "offset" concept revolved around offsetting indices
+  to the origin of the filter.
+
+  If the filter is odd shaped, the origin is the center.
+  If the filter is even shaped, the origin is between pixels.
+  Since we must choose a convention, the "center" is the top
+  left of the center 4 pixels.
+  */
+  if(K_rows % 2 == 0){
+    row_offset = K_rows/2 - 1;
+  } else{
+    row_offset = K_rows/2;
+  }
+  if(L_cols % 2 == 0){
+    col_offset = L_cols/2 - 1;
+  } else{
+    col_offset = L_cols/2;
+  }
+
   /* 2 outer for loops to iterate through the image. */
   for (m = 0; m < M_rows; m++){
     for(n = 0; n < N_cols; n++){

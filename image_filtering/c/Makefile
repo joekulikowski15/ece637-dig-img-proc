@@ -6,7 +6,7 @@ BIN = bin
 IMG = ../images
 SRC = src
 
-all: filter_image_section3 filter_image_section4
+all: filter_image_section3 filter_image_section4 filter_image_section5
 
 clean:
 	/bin/rm *.o $(BIN)/*
@@ -18,3 +18,6 @@ filter_image_section3: $(SRC)/filter_image_section3.o $(OBJ)
 
 filter_image_section4: $(SRC)/filter_image_section4.o $(OBJ) 
 	$(CC) $(CFLAGS) -o $(SRC)/filter_image_section4.out $(SRC)/filter_image_section4.o $(OBJ) -lm 
+
+filter_image_section5: $(SRC)/filter_image_section5.o $(OBJ) 
+	$(CC) $(CFLAGS) -o $(SRC)/filter_image_section5.out $(SRC)/filter_image_section5.o $(OBJ) -lm 
