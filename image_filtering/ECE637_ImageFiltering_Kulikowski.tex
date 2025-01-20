@@ -1,0 +1,980 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{hyperref}
+\graphicspath{ {images/} }
+\usepackage{amsmath}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{tikz,lipsum,lmodern}
+\usepackage[most]{tcolorbox}
+\usepackage{biblatex} %Imports biblatex package
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{ECE637: Laboratory 1, Image Filtering}
+\author{Joseph K. Kulikowski \\
+Purdue University}
+\date{January 24, 2025}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\listoffigures
+\lstlistoflistings
+\newpage
+
+\section{Section 3 Report: FIR Low Pass Filter}
+
+\subsection{A derivation of the analytical expression for $H(e^{j \mu}, e^{j \nu})$.}
+We have a finite impulse response (FIR) filter, $h(m,n)$ defined by the 9x9 point spread function that is to be applied to an $M x N$ image, $img(m,n) \  |  \ 0 \leq m < M \  $and$ \  0 \leq n < N $:
+\begin{align}\label{eq:1}
+h(m,n) =
+    \begin{cases} 
+    \frac{1}{81}& $ for $ |m| \leq 4 $ and $ |n| \leq 4 \\
+    0 & $otherwise$
+    \end{cases}
+\end{align}
+The Discrete Space Fourier Transform (DSFT) of this FIR filter can be computed by taking the Continuous Space Fourier Transform (CSFT) and then sampling the output in 2D. Lets imagine for a moment that our 2D FIR filter is a function of \textit{continuous} variables $m, n$. $h(m,n)$ can then be redefined in terms of the $rect$ function:
+\begin{align}\label{eq:2}
+rect(x) = 
+    \begin{cases}
+    1 & |x| \leq \frac{1}{2}\\
+    0 & |x| > \frac{1}{2}
+    \end{cases}
+\end{align}
+such that:
+
+\begin{align*}
+h(m,n) = \frac{1}{81} \ rect(\frac{m}{8})\ rect(\frac{n}{8})
+\end{align*}
+It is also important to note the CTFT of the $rect$ function is the $sinc$ function, $rect(t) \  \overset{CTFT}{\Longleftrightarrow} \ sinc(f)$, where $sinc(x)$ is defined below:
+
+\begin{align}\label{eq:3}
+\begin{split}
+sinc(x) = \frac{sin(\pi x)}{\pi x}
+\end{split}
+\end{align}
+A useful property of the CTFT is the scaling property:
+\begin{align}\label{eq:4}
+f(a \ t)\overset{CTFT}{\Longleftrightarrow}\frac{1}{|a|} \  F(\frac{f}{a}).
+\end{align}
+This property applied in both the $m,n$ dimensions allows us to arrive at an expression for the CSFT of $h(m, n)$, $\hat{H}(\mu, \nu)$:
+
+\begin{align*}
+    \begin{split}
+    \hat{H}(\mu, \nu) &= \frac{1}{81}( 8 \ sinc(8 \mu) \  8 \ sinc(8 \nu) )\\
+    &= \frac{64}{81}  \ sinc(8 \mu) \ sinc(8 \nu) \\
+    \end{split}
+\end{align*}
+We will sample this CSFT in both the $m, n$ dimensions every pixel, or with sampling periods ($T_x, T_y$) of 1. This can be completed with the equation for the sampled DSFT ($S(e^{j \mu}, e^{j \nu})$) in terms of the CSFT ($G(\mu, \nu)$) provided in the \href{https://engineering.purdue.edu/~bouman/ece637/notes/pdf/Sampling.pdf}{sampling notes on the course website} referenced below:
+\begin{align}\label{eq:5}
+    S(e^{j \mu}, e^{j \nu}) &= \frac{1}{T_x T_y} \sum_{k=-\infty}^{\infty} \sum_{l=-\infty}^{\infty} \ G(\frac{\mu-2 \pi k}{2 \pi T_x}, \frac{\mu-2 \pi l}{2 \pi T_y})
+\end{align}
+
+Therefore, the DSFT of our FIR filter in (1), $H(e^{j \mu}, e^{j \nu})$ can be defined as:
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black]
+\begin{align}\label{eq:6}
+    \begin{split}
+        H(e^{j \mu}, e^{j \nu}) &= \frac{64}{81}\sum_{k=-\infty}^{\infty} \sum_{l=-\infty}^{\infty} sinc(8 \frac{\mu - 2 \pi k}{2 \pi}) \ sinc(8 \frac{\nu - 2 \pi l}{2 \pi})
+    \end{split}
+\end{align}
+\end{tcolorbox}
+\newpage
+
+\subsection{A plot of $|H(e^{j \mu}, e^{j \nu})|$.}
+To compute $|H(e^{j \mu}, e^{j \nu})|$, I reproduced the DSFT numerically by using 20 values of both $k, l \in \mathbb{Z} \ | \  -10 \leq k,l < 10$ to set finite pounds on how many periods exists, and defined $\mu, \nu \in \mathbb{R} \ | \ -3\pi\leq \mu, \nu \leq 3\pi$ such that each had 1000 points for a fine enough resolution for the whole range $[-3\pi, 3\pi] \times [-3\pi, 3\pi]$. This is shown below in Figure \ref{fig:1}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{DSFTmag3D.jpg}
+    \caption{$|H(e^{j \mu}, e^{j \nu})|$ over the region $[-\pi,\pi] \times [-\pi,\pi]$}
+    \label{fig:1}
+\end{figure}
+\newpage
+To further prove that I have actually shown you the DSFT in a finitely periodic fashion, I'll expand the plot range to $[-3\pi, 3\pi] \times [-3\pi, 3\pi]$ in Figure \ref{fig:2}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{DSFTmag3D_3pi.jpg}
+    \caption{$|H(e^{j \mu}, e^{j \nu})|$ over the region $[-3\pi,3\pi] \times [-3\pi,3\pi]$ \textit{*supplementary}}
+    \label{fig:2}
+\end{figure}
+
+\newpage
+\subsection{The color image \textit{img03.tif}.}
+Below in Figure \ref{fig:3} is a plot of the 3 color image present in the file attached to this laboratory assignment.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.66\linewidth]{img03.jpg}
+    \caption{The image to be filtered by the FIR filter described by Equations \ref{eq:1}, \ref{eq:6}}
+    \label{fig:3}
+\end{figure}
+
+\newpage
+\subsection{The filtered color image.}
+Below in Figure \ref{fig:4} is the image after it has been filtered by the FIR low pass filter described by Equations \eqref{eq:1} and \eqref{eq:6}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.66\linewidth]{FIR_LPF_filtered.jpg}
+    \caption{The image filtered by the FIR filter described by Equations \eqref{eq:1}, \eqref{eq:6}}
+    \label{fig:4}
+\end{figure}
+
+\newpage
+\subsection{A listing of my C Code}
+Here is my main function for this section, filter\_image\_section3.c, show below in Listing \ref{lst:sec3}. It should be well commented, and the actual filtering of the image is being done by a function I wrote, convolve2DFB.c shown in Listing \ref{lst:convc}. This function comes with a corresponding header file, convolve2DFB.h shown in Listing \ref{lst:convh}.
+
+\begin{lstlisting}[language=C, caption=filter\_image\_section3.c, label={lst:sec3}]
+#include <math.h>
+#include "convolve2DFB.h"
+#include "tiff.h"
+#include "allocate.h"
+#include "typeutil.h"
+
+void error(char *name);
+void print_2D_double(int32_t rows, int32_t cols, double **arr);
+void print_2D_int(int32_t rows, int32_t cols, int32_t **arr);
+void clip(int32_t M_rows, int32_t N_cols, double **img);
+
+int32_t main (int32_t argc, char **argv){
+  FILE *fp;
+  struct TIFF_img input_img, filtered_img;
+  double **red_arr, **green_arr, **blue_arr, **filter;
+  double **filt_red, **filt_green, **filt_blue;
+  int32_t i, j;
+  int8_t filter_size = 9;
+  char *out_file = "../images/FIR_LPF_filtered.tif";
+
+  if ( argc != 2 ) error( argv[0] );
+
+  /* open image file */
+  if ( ( fp = fopen ( argv[1], "rb" ) ) == NULL ) {
+    fprintf ( stderr, "cannot open file %s\n", argv[1] );
+    exit ( 1 );
+  }
+
+  /* read image */
+  if ( read_TIFF ( fp, &input_img ) ) {
+    fprintf ( stderr, "error reading file %s\n", argv[1] );
+    exit ( 1 );
+  }
+
+  /* close image file */
+  fclose ( fp );
+
+  /* check the type of image data */
+  if ( input_img.TIFF_type != 'c' ) {
+    fprintf ( stderr, "error:  image must be 24-bit color\n" );
+    exit ( 1 );
+  }
+
+  /* Allocate doubles for processing. */
+  filter = (double **) get_img(filter_size, filter_size, sizeof(double));
+  red_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  green_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  blue_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_red = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_green = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_blue = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+
+
+  /* copy RGB components to double arrays */
+  for ( i = 0; i < input_img.height; i++ )
+  for ( j = 0; j < input_img.width; j++ ) {
+    red_arr[i][j] = input_img.color[0][i][j];
+    green_arr[i][j] = input_img.color[1][i][j];
+    blue_arr[i][j] = input_img.color[2][i][j];
+  }
+
+  /* Filter the image! */
+  /* Generate the filter in the problem statement */
+  for (i=0; i<filter_size; i++){
+    for (j=0; j<filter_size; j++){
+      filter[i][j] = 1./81.;
+    }
+  }
+
+  /* Convolve the filter with each color, perform clipping.*/
+  convolve2DFB(input_img.height, input_img.width, filter_size,
+               filter_size, red_arr, filter, filt_red);
+  convolve2DFB(input_img.height, input_img.width, filter_size,
+               filter_size, green_arr, filter, filt_green);
+  convolve2DFB(input_img.height, input_img.width, filter_size,
+               filter_size, blue_arr, filter, filt_blue);
+
+  /* Clip */
+  clip(input_img.height, input_img.width, filt_red);
+  clip(input_img.height, input_img.width, filt_green);
+  clip(input_img.height, input_img.width, filt_blue);
+  
+  /* Convert the int arrays to TIFF structs. */
+  get_TIFF(&filtered_img, input_img.height, input_img.width, 'c' );
+  for(i=0; i<input_img.height; i++){
+    for(j=0; j<input_img.width; j++){
+      filtered_img.color[0][i][j] = (int32_t)filt_red[i][j];
+      filtered_img.color[1][i][j] = (int32_t)filt_green[i][j];
+      filtered_img.color[2][i][j] = (int32_t)filt_blue[i][j];
+    }
+  }
+  
+  /* Try and open the file, error if can't. */
+  if ((fp = fopen(out_file, "wb")) == NULL){
+    fprintf(stderr, "cannot open file %s\n", out_file);
+    exit(1);
+  }
+
+  /* Try and write the file, error if can't. */
+  if(write_TIFF(fp, &filtered_img)){
+    fprintf(stderr, "error writing TIFF file %s\n", out_file );
+    exit(1);
+  }
+  /* Close the file. */
+  fclose(fp);
+
+  /* de-allocate space which was used for the images / arrays. */
+  free_TIFF(&(input_img));
+  free_TIFF(&(filtered_img));
+  
+  free_img((void**)red_arr);
+  free_img((void**)green_arr);  
+  free_img((void**)blue_arr);
+  free_img((void**)filt_red);
+  free_img((void**)filt_green);
+  free_img((void**)filt_blue);
+  free_img((void**)filter);
+
+  return(0);
+}
+
+void error(char *name)
+{
+    printf("usage:  %s  image.tiff \n\n",name);
+    printf("this program reads in a 24-bit color TIFF image.\n");
+    printf("It then horizontally filters the RGB components\n");
+    printf("with the FIR filter described in section 3 and writes\n");
+    printf("out the result as a 24 bit color image\n");
+    printf("with the name 'FIR_LPF_filtered.tiff'.\n");
+    exit(1);
+}
+
+void clip(int32_t M_rows, int32_t N_cols, double **img){
+  /*
+  Perform clipping of image.
+  */
+  int32_t i, j;
+  for (i = 0; i < M_rows; i++){
+    for (j = 0; j < N_cols; j++){
+     if (img[i][j] < 0.){
+      img[i][j] = 0.;
+     }
+     if (img[i][j] > 255.){
+      img[i][j] = 255.;
+     }
+    } 
+  }
+}
+
+void print_2D_double(int32_t rows, int32_t cols, double **arr) {
+  int32_t i, j;
+  printf("[\n");
+  for (i = 0; i < rows; i++) {
+    printf("[");
+    for (j = 0; j < cols; j++) {
+        printf("%6.3f ", arr[i][j]);
+    }
+    printf("]\n");
+  }
+  printf("]\n");
+}
+
+void print_2D_int(int32_t rows, int32_t cols, int32_t **arr) {
+  int32_t i, j;
+  printf("[\n");
+  for (i = 0; i < rows; i++) {
+    printf("[");
+    for (j = 0; j < cols; j++) {
+        printf("%6d ", arr[i][j]);
+    }
+    printf("]\n");
+  }
+  printf("]\n");
+}
+\end{lstlisting}
+\newpage
+This is the header file for the function that actually does the filtering, convolve2DFB.h, shown below in Listing \ref{lst:convh}:
+
+\begin{lstlisting}[language=C, caption=convolve2DFB.h, label={lst:convh}]
+#ifndef _CONVOLVE2DFB_H
+#define _CONVOLVE2DFB_H
+
+#include "typeutil.h"
+
+/*
+Author: Joseph K. Kulikowski
+Perform 2D convolution enforcing  free boundary conditions
+on an M_rows x N_cols image with a K_rows x L_cols filter.
+*/
+
+void convolve2DFB(int32_t M_rows, /* Height of the input image. */
+                  int32_t N_cols, /* Width of the input image. */
+                  int32_t K_rows, /* Height of the filter to be applied. */
+                  int32_t L_cols, /* Width of the filter to be applied. */
+                  double **image, /* Image to filter. */
+                  double **filter, /* Filter to apply. */
+                  double **filtered /* Result of the 2D convolution. */
+                  );
+#endif /* _CONVOLVE2DFB */
+\end{lstlisting}
+
+This is the function convolve2DFB.c, shown below in Listing \ref{lst:convc}:
+\begin{lstlisting}[language=C, caption=conv2DFB.c, label={lst:convc}]
+#include "typeutil.h"
+
+void convolve2DFB(int32_t M_rows, int32_t N_cols, int32_t K_rows, 
+                  int32_t L_cols, double **image, double **filter,
+                  double **filtered) {
+  /*
+  Author: Joseph K. Kulikowski
+  Perform 2D convolution enforcing  free boundary conditions
+  on an M_rows x N_cols image with a K_rows x L_cols filter.
+  
+  Filter can be odd or even shaped.
+  */
+  int32_t m, n, k, l, row_offset, col_offset;
+  int32_t filtered_row, filtered_col, filter_row, filter_col;
+  double sum;
+  /*
+  The "offset" concept revolved around offsetting indices
+  to the origin of the filter.
+
+  If the filter is odd shaped, the origin is the center.
+  If the filter is even shaped, the origin is between pixels.
+  Since we must choose a convention, the "center" is the top
+  left of the center 4 pixels.
+  */
+  if(K_rows % 2 == 0){
+    row_offset = K_rows/2 - 1;
+  } else{
+    row_offset = K_rows/2;
+  }
+  if(L_cols % 2 == 0){
+    col_offset = L_cols/2 - 1;
+  } else{
+    col_offset = L_cols/2;
+  }
+
+  /* 2 outer for loops to iterate through the image. */
+  for (m = 0; m < M_rows; m++){
+    for(n = 0; n < N_cols; n++){
+      /* 
+        Write inner loops to enforce Free Boundary Conditions, that is,
+        if a pixel is outside the image, we mark it 0.
+       */
+      
+      sum = 0;
+      /* 
+      This set of inner loops gives us an easy way to compute if we are
+      outside the image!   
+       */
+      for(k = -row_offset; k <= row_offset; k++){
+        for(l = -col_offset; l <= col_offset; l++){
+          /* Position of pixels inside our filtered img */
+          filtered_row = m + k;
+          filtered_col = n + l;
+          /* The actual filter indices are offset by K_rows/2 due to loop vars. */
+          filter_row = k + row_offset;
+          filter_col = l + col_offset;
+
+          if (filtered_row >= 0 && filtered_row < M_rows &&
+              filtered_col >= 0 && filtered_col < N_cols){
+                /*
+                We are within our bounds! contibute to the sum.
+                */ 
+                sum += filter[filter_row][filter_col] * image[filtered_row][filtered_col];
+              }
+
+        }
+      }
+      filtered[m][n] = sum;
+    }
+  }
+}
+\end{lstlisting}
+
+\newpage
+\section{Section 4 Report: FIR Sharpening Filter}
+
+\subsection{A derivation of the analytical expression for $H(e^{j \mu}, e^{j \nu})$.}
+Warning: This will be very similar to subsection 1.1.
+Our FIR low pass filter is defined as:
+\begin{align}\label{eq:7}
+h(m,n) =
+    \begin{cases} 
+    \frac{1}{25}& $ for $ |m| \leq 2 $ and $ |n| \leq 2 \\
+    0 & $otherwise$
+    \end{cases}
+\end{align}
+We can again redefine in terms of the $rect$ function (\ref{eq:2}):
+\begin{align*}
+    h(m,n) = \frac{1}{25} rect(\frac{m}{4}) rect(\frac{n}{4})
+\end{align*}
+We can then take the CSFT, $\hat{H}(\mu, \nu)$, of our filter, $h(m, n)$ directly. We apply the scaling property of the CTFT (\ref{eq:4}), noting that the CTFT of the $rect$ function is the $sinc$ function (\ref{eq:3}):
+\begin{align}\label{eq:8}
+    \hat{H}(\mu, \nu) = \frac{16}{25} sinc(4 \mu) sinc(4 \nu)
+\end{align}
+We simply sample this CSFT in 2D with sampling periods of 1 pixel in each dimension using (\ref{eq:5}), arriving at the DSFT of our FIR filter in (\ref{eq:7}), $H(e^{j \mu}, e^{j \nu})$, which can be defined as:
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black]
+\begin{align}\label{eq:9}
+    \begin{split}
+        H(e^{j \mu}, e^{j \nu}) &= \frac{16}{25}\sum_{k=-\infty}^{\infty} \sum_{l=-\infty}^{\infty} sinc(4 \frac{\mu - 2 \pi k}{2 \pi}) \ sinc(4 \frac{\nu - 2 \pi l}{2 \pi})
+    \end{split}
+\end{align}
+\end{tcolorbox}
+
+\subsection{A derivation of the analytical expression for $G(e^{j \mu}, e^{j \nu})$.}
+We have an unsharp mask filter given by the relation:
+\begin{align}\label{eq:10}
+    g(m,n) = \delta(m,n) + \lambda (\delta(m,n) - h(m,n))
+\end{align}
+where $\lambda \in \mathbb{+R}$. To find the CSFT of $g(m,n)$, $\hat{G}(m,n)$, we must note the CSFT of the 2D dirac delta function, $\delta(x,y)$:
+\begin{align}\label{eq:11}
+\delta(x,y) = \delta(x)\delta(y) \  \overset{CSFT}{\Longleftrightarrow} \ 1
+\end{align}
+It then becomes a matter of invoking linearity with (\ref{eq:9}) to arrive at $\hat{G}(m,n)$:
+\begin{align*}
+\hat{G}(m,n) &= CSFT\{\delta(m, n)\} + \lambda(CSFT\{\delta(m, n)\} - CSFT\{h(m,n)\}) \\
+&= 1 + \lambda (1 - \frac{16}{25} sinc(4 \mu) sinc(4 \nu))
+\end{align*}
+Sampling in both dimensions every pixel, using \eqref{eq:5}, we can arrive at an expression for the DSFT of $g(m, n)$, $G(e^{j \mu}, e^{j \nu})$:
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black]
+\begin{align}\label{eq:12}
+G(e^{j \mu}, e^{j \nu}) &=  1 + \lambda(1 - \frac{16}{25} \sum_{k=-\infty}^{\infty} \sum_{l=-\infty}^{\infty} sinc(4 \frac{\mu - 2 \pi k}{2 \pi}) \ sinc(4 \frac{\nu - 2 \pi l}{2 \pi}))
+\end{align}
+\end{tcolorbox}
+\newpage
+\subsection{A plot of $|H(e^{j \mu}, e^{j \nu})|$.}
+Similar methods in were used to plot this image as in 1.2.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{DSFTmag3D_p4.jpg}
+    \caption{$|H(e^{j \mu}, e^{j \nu})|$ over the region $[-\pi,\pi] \times [-\pi,\pi]$}
+    \label{fig:5}
+\end{figure}
+\newpage
+\subsection{A plot of $|G(e^{j \mu}, e^{j \nu})|$ for $\lambda=1.5$.}
+Similar methods in were used to plot this image as in 2.3.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{DSFTmag3D_p4_G.jpg}
+    \caption{$|G(e^{j \mu}, e^{j \nu})|$ over the region $[-\pi,\pi] \times [-\pi,\pi]$}
+    \label{fig:6}
+\end{figure}
+\newpage
+\subsection{The input color image \textit{imgblur.tif}.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.66\linewidth]{imgblur.jpg}
+    \caption{The input color image \textit{imgblur.tif} attached to this laboratory.}
+    \label{fig:7}
+\end{figure}
+
+\newpage
+\subsection{The output sharpened color image for $\lambda = 1.5$}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.66\linewidth]{sharp_lambda1.500000_.jpg}
+    \caption{The output sharpened color image for $\lambda = 1.5$}
+    \label{fig:8}
+\end{figure}
+
+\newpage
+\subsection{A listing of my C code.}
+The main function used to generate the sharpened color image is presented below, and is very similar to Listing \ref{lst:sec3}. in Listing \ref{lst:sec4}. It again heavily relies on conv2DFB.c, found in Listing \ref{lst:convc}.
+\begin{lstlisting}[language=C, caption=filter\_image\_section4.c, label={lst:sec4}]
+#include <math.h>
+#include "convolve2DFB.h"
+#include "tiff.h"
+#include "allocate.h"
+#include "typeutil.h"
+
+void error(char *name);
+void print_2D_double(int32_t rows, int32_t cols, double **arr);
+void print_2D_int(int32_t rows, int32_t cols, int32_t **arr);
+void clip(int32_t M_rows, int32_t N_cols, double **img);
+
+int32_t main (int32_t argc, char **argv) 
+{
+
+
+  FILE *fp;
+  struct TIFF_img input_img, filtered_img;
+  double **red_arr, **green_arr, **blue_arr, **filter;
+  double **filt_red, **filt_green, **filt_blue;
+  int32_t i, j;
+  int8_t filter_size = 5, ax_offset;
+  char *float_con_err;
+  double lambda, h;
+  char out_file[100];
+
+  
+  /*
+  3 input args. the name of the file, the name of the
+  input image file, and the lambda value.
+  */
+  if ( argc != 3 ) error( argv[0] );
+
+  /* open image file */
+  if ( ( fp = fopen ( argv[1], "rb" ) ) == NULL ) {
+    fprintf ( stderr, "cannot open file %s\n", argv[1] );
+    exit ( 1 );
+  }
+
+  /* read image */
+  if ( read_TIFF ( fp, &input_img ) ) {
+    fprintf ( stderr, "error reading file %s\n", argv[1] );
+    exit ( 1 );
+  }
+
+  /* close image file */
+  fclose ( fp );
+
+  /* convert command line argument to float */
+  lambda = strtof(argv[2], &float_con_err);
+  if(*float_con_err != '\0'){
+    fprintf(stderr, "error reading input lambda to float %s\n", argv[2]); 
+  }
+
+  /* Name output file based on lambda input. */
+  snprintf(out_file, sizeof(out_file), "../images/sharp_lambda_%f_.tif", lambda);
+  
+
+  /* check the type of image data */
+  if ( input_img.TIFF_type != 'c' ) {
+    fprintf ( stderr, "error:  image must be 24-bit color\n" );
+    exit ( 1 );
+  }
+
+  /* Allocate doubles for processing. */
+
+  filter = (double **) get_img(filter_size, filter_size, sizeof(double));
+  red_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  green_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  blue_arr = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_red = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_green = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_blue = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+
+
+  /* copy RGB components to double arrays */
+  for ( i = 0; i < input_img.height; i++ )
+  for ( j = 0; j < input_img.width; j++ ) {
+    red_arr[i][j] = input_img.color[0][i][j];
+    green_arr[i][j] = input_img.color[1][i][j];
+    blue_arr[i][j] = input_img.color[2][i][j];
+  }
+
+  /* Filter the image! */
+  /* Generate the filter in the problem statement:
+  */
+  h = 1./25;
+  ax_offset = filter_size/2;
+  for (i=-ax_offset; i<=ax_offset; i++){
+    for (j=-ax_offset; j<=ax_offset; j++){
+      if (i == 0 && j == 0){
+        filter[i + ax_offset][j + ax_offset] = 
+          1. + lambda * (1. - h);
+      } else{
+        filter[i + ax_offset][j + ax_offset] = 
+          -h * lambda;
+      }
+    }
+  }
+
+  /* Convolve the filter with each color, perform clipping.*/
+  convolve2DFB(input_img.height, input_img.width, filter_size,
+               filter_size, red_arr, filter, filt_red);
+  convolve2DFB(input_img.height, input_img.width, filter_size,
+               filter_size, green_arr, filter, filt_green);
+  convolve2DFB(input_img.height, input_img.width, filter_size,
+               filter_size, blue_arr, filter, filt_blue);
+
+  /* Clip */
+  clip(input_img.height, input_img.width, filt_red);
+  clip(input_img.height, input_img.width, filt_green);
+  clip(input_img.height, input_img.width, filt_blue);
+  
+  /* Convert the int arrays to TIFF structs. */
+  get_TIFF(&filtered_img, input_img.height, input_img.width, 'c' );
+  for(i=0; i<input_img.height; i++){
+    for(j=0; j<input_img.width; j++){
+      filtered_img.color[0][i][j] = (int32_t)filt_red[i][j];
+      filtered_img.color[1][i][j] = (int32_t)filt_green[i][j];
+      filtered_img.color[2][i][j] = (int32_t)filt_blue[i][j];
+    }
+  }
+  
+    /* Try and open the file, error if can't. */
+  if ((fp = fopen(out_file, "wb")) == NULL){
+    fprintf(stderr, "cannot open file %s\n", out_file);
+    exit(1);
+  }
+
+  /* Try and write the file, error if can't. */
+  if(write_TIFF(fp, &filtered_img)){
+    fprintf(stderr, "error writing TIFF file %s\n", out_file );
+    exit(1);
+  }
+  /* Close the file. */
+  fclose(fp);
+
+  /* de-allocate space which was used for the images / arrays. */
+  free_TIFF(&(input_img));
+  free_TIFF(&(filtered_img));
+  
+  free_img((void**)red_arr);
+  free_img((void**)green_arr);  
+  free_img((void**)blue_arr);
+  free_img((void**)filt_red);
+  free_img((void**)filt_green);
+  free_img((void**)filt_blue);
+  free_img((void**)filter);
+
+  return(0);
+}
+
+void error(char *name)
+{
+    printf("usage:  %s  image.tiff \n\n",name);
+    printf("this program reads in a 24-bit color TIFF image.\n");
+    printf("It then horizontally filters the RGB components\n");
+    printf("with the FIR filter described in section 3 and writes\n");
+    printf("out the result as a 24 bit color image\n");
+    printf("with the name 'FIR_LPF_filtered.tiff'.\n");
+    exit(1);
+}
+
+void clip(int32_t M_rows, int32_t N_cols, double **img){
+  /*
+  Perform clipping of image.
+  */
+  int32_t i, j;
+  for (i = 0; i < M_rows; i++){
+    for (j = 0; j < N_cols; j++){
+     if (img[i][j] < 0.){
+      img[i][j] = 0.;
+     }
+     if (img[i][j] > 255.){
+      img[i][j] = 255.;
+     }
+    } 
+  }
+}
+
+void print_2D_double(int32_t rows, int32_t cols, double **arr) {
+  int32_t i, j;
+  printf("[\n");
+  for (i = 0; i < rows; i++) {
+    printf("[");
+    for (j = 0; j < cols; j++) {
+        printf("%6.3f ", arr[i][j]);
+    }
+    printf("]\n");
+  }
+  printf("]\n");
+}
+
+void print_2D_int(int32_t rows, int32_t cols, int32_t **arr) {
+  int32_t i, j;
+  printf("[\n");
+  for (i = 0; i < rows; i++) {
+    printf("[");
+    for (j = 0; j < cols; j++) {
+        printf("%6d ", arr[i][j]);
+    }
+    printf("]\n");
+  }
+  printf("]\n");
+}
+\end{lstlisting}
+
+
+\newpage
+\section{Section 5 Report: IIR Filter}
+\subsection{A derivation of the analytical expression for $H(e^{j \mu}, e^{j \nu})$.}
+Let $h(m,n)$ be the IIR filter defined by the recursive difference equation:
+\begin{align}\label{eq:13}
+\begin{split}
+    y(m,n) &= 0.01 x(m,n) + 0.9 (y(m-1,n) + y(m, n-1)) - 0.81 y(m-1,n-1)\\
+    &= \frac{1}{100} x(m,n) + \frac{9}{10}((y(m-1,n) + y(m, n-1))) - (\frac{9}{10})^2 y(m-1,n-1)
+\end{split}
+\end{align}
+We can then take the 2D Z-Transform of this difference equation, which is defined as:
+\begin{align}
+    F(z_1, z_2) &= \sum_{m=-\infty}^{\infty} \sum_{m=-\infty}^{\infty} f(m,n) z_1^{-m} z_2^{-n}
+    \label{eq:14}
+\end{align}
+Applying \eqref{eq:14} to \eqref{eq:13}, we get:
+\begin{align*}
+    Y(z_1, z_2) &= \frac{1}{100} X(z_1,z_2) z_1^0 z_2^0 + \frac{9}{10} Y(z_1,z_2)(z_1^{-1} z_2^0 + z_1^0 z_2^{-1}) - (\frac{9}{10})^2 Y(z_1,z_2) z_1^{-1} z_2^{-1}\\
+\end{align*}
+Noting that $anything^0 = 1$, $H(z_1,z_2) = \frac{Y(z_1, z_2)}{X(z_1,z_2)}$, and rearranging, we can arrive at an expression for $H(z_1, z_2)$:
+\begin{align}\label{eq:15}
+\begin{split}
+\frac{1}{100} X(z_1, z_2) &= Y(z_1,z_2)[1 + (\frac{9}{10})^2 z_1^{-1} z_2^{-1} - \frac{9}{10} (z_1^{-1} + z_2^{-1})]\\
+\Rightarrow H(z_1, z_2) &= \frac{1}{100} \frac{1}{1 + (\frac{9}{10})^2 z_1^{-1} z_2^{-1} - \frac{9}{10} (z_1^{-1} + z_2^{-1})}\\
+&= \frac{1}{100} \frac{1}{1 + \frac{9}{10} (\frac{9}{10} z_1^{-1} z_2^{-1}
+ - (z_1^{-1} + z_2^{-1}))}
+\end{split}
+\end{align}
+Evaluating $H(z_1,z_2)$ at $z_1 = e^{j \mu}, z_2 = e^{j \nu}$, we can arrive at an expression for the DSFT, $H(e^{j \mu},e^{j \nu})$, of our filter, $h(m,n)$:
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black]
+\begin{align}\label{eq:16}
+H(e^{j \mu},e^{j \nu}) &= \frac{1}{100} \frac{1}{1 + \frac{9}{10} (\frac{9}{10} e^{-j (\mu + \nu)} - (e^{-j \mu} + e^{-j \nu}))}
+\end{align}
+\end{tcolorbox}
+\newpage
+
+\subsection{A plot of $|H(e^{j \mu}, e^{j \nu})|$.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{DSFTmag3D_p5.jpg}
+    \caption{A plot of $|H(e^{j \mu}, e^{j \nu})|$.}
+    \label{fig:9}
+\end{figure}
+\newpage
+
+\subsection{An image of the point spread function.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{h_out.jpg}
+    \caption{An image of the point spread function of the filter defined by \eqref{eq:13}.}
+    \label{fig:9}
+\end{figure}
+\newpage
+\subsection{The filtered output color image.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.66\linewidth]{IIR_filtered.jpg}
+    \caption{\textit{img03.tif} after the filter defined by \eqref{eq:13} was applied}
+    \label{fig:10}
+\end{figure}
+\newpage
+\subsection{A listing of my C code.}
+Unlike the other Listings, the main fucntion used to generate the image in 3.4 does not heavily rely on 2D convolution, but instead, the recursion relation in \eqref{eq:13}. It is shown below in \ref{lst:sec5}.
+\begin{lstlisting}[language=C, caption=filter\_image\_section5.c, label={lst:sec5}]
+
+#include <math.h>
+#include "convolve2DFB.h"
+#include "tiff.h"
+#include "allocate.h"
+#include "typeutil.h"
+
+void error(char *name);
+void print_2D_double(int32_t rows, int32_t cols, double **arr);
+void print_2D_int(int32_t rows, int32_t cols, int32_t **arr);
+void clip(int32_t M_rows, int32_t N_cols, double **img);
+
+int32_t main (int32_t argc, char **argv) 
+{
+
+
+  FILE *fp;
+  struct TIFF_img input_img, filtered_img;
+  double color_val;
+  double **filt_red, **filt_green, **filt_blue;
+  int32_t i, j, c;
+  char *out_file = "../images/IIR_filtered.tif";
+  double left, up, leftup;
+  int8_t left_exists, up_exists, leftup_exists;
+
+  
+  /*
+  3 input args. the name of the file, the name of the
+  input image file, and the lambda value.
+  */
+  if ( argc != 2 ) error( argv[0] );
+
+  /* open image file */
+  if ( ( fp = fopen ( argv[1], "rb" ) ) == NULL ) {
+    fprintf ( stderr, "cannot open file %s\n", argv[1] );
+    exit ( 1 );
+  }
+
+  /* read image */
+  if ( read_TIFF ( fp, &input_img ) ) {
+    fprintf ( stderr, "error reading file %s\n", argv[1] );
+    exit ( 1 );
+  }
+
+  /* close image file */
+  fclose ( fp );
+
+  /* Name output file based on lambda input. */
+  
+
+  /* check the type of image data */
+  if ( input_img.TIFF_type != 'c' ) {
+    fprintf ( stderr, "error:  image must be 24-bit color\n" );
+    exit ( 1 );
+  }
+
+  /* Allocate doubles for processing. */
+  filt_red = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_green = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+  filt_blue = (double **)get_img(input_img.width,input_img.height,sizeof(double));
+
+  /* Work with rgb components while we filter the image! */
+  for(c=0; c<3; c++){
+    for(i=0; i<input_img.height; i++){
+      for(j=0; j<input_img.width; j++){
+        color_val = input_img.color[c][i][j];
+        /* enforce Free Boundary Conditions. */
+        left_exists = j-1>=0;
+        up_exists = i-1>=0;
+        leftup_exists = (i-1>=0) && (j-1 >=0);
+        if(c==0){
+          /* Define left, up, and left-up pixels for the red component. */
+          left = (left_exists) ? filt_red[i][j-1] : 0.0;
+          up = (up_exists) ? filt_red[i-1][j] : 0.0;
+          leftup = (leftup_exists) ? filt_red[i-1][j-1] : 0.0;
+          filt_red[i][j] = (0.01 * color_val) + (0.9*(left + up)) - (0.81 * leftup);
+        }
+        if(c==1){
+          /* Define left, up, and left-up pixels for the green component. */
+          left = (left_exists) ? filt_green[i][j-1] : 0.0;
+          up = (up_exists) ? filt_green[i-1][j] : 0.0;
+          leftup = (leftup_exists) ? filt_green[i-1][j-1] : 0.0;
+          filt_green[i][j] = (0.01 * color_val) + (0.9*(left + up)) - (0.81 * leftup);
+        }
+        if(c==2){
+          /* Define left, up, and left-up pixels for the blue component. */
+          left = (left_exists) ? filt_blue[i][j-1] : 0.0;
+          up = (up_exists) ? filt_blue[i-1][j] : 0.0;
+          leftup = (leftup_exists) ? filt_blue[i-1][j-1] : 0.0;
+          filt_blue[i][j] = (0.01 * color_val) + (0.9*(left + up)) - (0.81 * leftup);
+        }
+      }
+    }
+  }
+
+  /* Clip all components of the RGB components.*/
+  clip(input_img.height, input_img.width, filt_red);
+  clip(input_img.height, input_img.width, filt_green);
+  clip(input_img.height, input_img.width, filt_blue);
+  
+  /* Convert the int arrays to TIFF structs. */
+  get_TIFF(&filtered_img, input_img.height, input_img.width, 'c' );
+  for(i=0; i<input_img.height; i++){
+    for(j=0; j<input_img.width; j++){
+      filtered_img.color[0][i][j] = (int32_t)filt_red[i][j];
+      filtered_img.color[1][i][j] = (int32_t)filt_green[i][j];
+      filtered_img.color[2][i][j] = (int32_t)filt_blue[i][j];
+    }
+  }
+
+  /* Try and open the file, error if can't. */
+  if ((fp = fopen(out_file, "wb")) == NULL){
+    fprintf(stderr, "cannot open file %s\n", out_file);
+    exit(1);
+  }
+
+  /* Try and write the file, error if can't. */
+  if(write_TIFF(fp, &filtered_img)){
+    fprintf(stderr, "error writing TIFF file %s\n", out_file );
+    exit(1);
+  }
+  /* Close the file. */
+  fclose(fp);
+
+  /* de-allocate space which was used for the images / arrays. */
+  free_TIFF(&(input_img));
+  free_TIFF(&(filtered_img));
+  free_img((void**)filt_red);
+  free_img((void**)filt_green);
+  free_img((void**)filt_blue);
+
+  return(0);
+}
+
+void error(char *name)
+{
+    printf("usage:  %s  image.tiff \n\n",name);
+    printf("this program reads in a 24-bit color TIFF image.\n");
+    printf("It then horizontally filters the RGB components\n");
+    printf("with the FIR filter described in section 3 and writes\n");
+    printf("out the result as a 24 bit color image\n");
+    printf("with the name 'FIR_LPF_filtered.tiff'.\n");
+    exit(1);
+}
+
+void clip(int32_t M_rows, int32_t N_cols, double **img){
+  /*
+  Perform clipping of image.
+  */
+  int32_t i, j;
+  for (i = 0; i < M_rows; i++){
+    for (j = 0; j < N_cols; j++){
+     if (img[i][j] < 0.){
+      img[i][j] = 0.;
+     }
+     if (img[i][j] > 255.){
+      img[i][j] = 255.;
+     }
+    } 
+  }
+}
+
+void print_2D_double(int32_t rows, int32_t cols, double **arr) {
+  int32_t i, j;
+  printf("[\n");
+  for (i = 0; i < rows; i++) {
+    printf("[");
+    for (j = 0; j < cols; j++) {
+        printf("%6.3f ", arr[i][j]);
+    }
+    printf("]\n");
+  }
+  printf("]\n");
+}
+
+void print_2D_int(int32_t rows, int32_t cols, int32_t **arr) {
+  int32_t i, j;
+  printf("[\n");
+  for (i = 0; i < rows; i++) {
+    printf("[");
+    for (j = 0; j < cols; j++) {
+        printf("%6d ", arr[i][j]);
+    }
+    printf("]\n");
+  }
+  printf("]\n");
+}
+\end{lstlisting}
+
+\end{document}
