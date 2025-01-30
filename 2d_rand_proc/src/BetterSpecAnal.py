@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 def BetterSpecAnal(img:np.ndarray, n_windows: int=25, window_height: int=64, window_width: int=64)-> np.ndarray:
     """

@@ -22,7 +22,7 @@ X, Y = np.meshgrid(x, y)
 surf = ax.plot_surface(X, Y, np.log(np.abs(psd)), cmap=plt.cm.coolwarm)
 ax.set_xlabel('$\mu$ axis')
 ax.set_ylabel('$\\nu$ axis')
-ax.set_title('log(Power Spectral Density)')
+ax.set_title('Estimate of log(Power Spectral Density)')
 fig.colorbar(surf, shrink=0.5, aspect=5)
 # Save the figure.
 fig.savefig(os.path.join(this_dir,"..","images","BetterSpecAnalP1.jpg"), dpi=500)

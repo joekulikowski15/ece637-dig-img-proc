@@ -12,7 +12,9 @@ im_scaled = 255*(img + 0.5)
 
 # Show and save the scaled image
 fig, ax = plt.subplots()
-ax.imshow(im_scaled, cmap=plt.cm.gray)
+imshowed = ax.imshow(im_scaled, cmap=plt.cm.gray)
+ax.set_title("The image 255 * (x + 0.5)")
+fig.colorbar(imshowed, shrink=0.5, aspect=5)
 fig.savefig(os.path.join(this_dir,"..","images","rand_scaledp2.jpg"), dpi=500)
 
 # Initialize array for filtered values.
@@ -41,20 +43,25 @@ for row in range(np.size(im_scaled,0)):
 filtered = filtered.astype(np.uint8) + 127
 # Plot and output this array.
 fig2, ax2 = plt.subplots()
-ax2.imshow(filtered, cmap=plt.cm.gray)
+imshowed =ax2.imshow(filtered, cmap=plt.cm.gray)
+ax2.set_title("The image y + 127")
+fig2.colorbar(imshowed, shrink=0.5, aspect=5)
 fig2.savefig(os.path.join(this_dir,"..","images","y_plus_127.jpg"), dpi=500)
 
 # Set window shape
 window_height=window_width=64
 # Calculate theoretical psd
-theoretical_psd = np.fft.fftshift((1/window_height**2)*np.abs(np.fft.fft2(filtered))**2)
+theoretical_psd = np.fft.fftshift(1/(window_height*window_width) * \
+                                 (np.abs(np.fft.fft2(filtered[rand_size//2:rand_size//2+window_height,
+                                                              rand_size//2:rand_size//2+window_height]
+                                                    )**2))) 
 
 fig3, ax3 = plt.subplots(subplot_kw={"projection": "3d"})
-y = np.linspace(-np.pi, np.pi, rand_size)
-x = np.linspace(-np.pi, np.pi, rand_size)
+y = np.linspace(-np.pi, np.pi, window_height)
+x = np.linspace(-np.pi, np.pi, window_width)
 X, Y = np.meshgrid(x, y)
 surf = ax3.plot_surface(X, Y, np.log(theoretical_psd), cmap=plt.cm.coolwarm)
-ax3.set_xlabel('$\mu$ axis')
+ax3.set_xlabel('$\\mu$ axis')
 ax3.set_ylabel('$\\nu$ axis')
 ax3.set_title('Theoretical log(Power Spectral Density)')
 fig3.colorbar(surf, shrink=0.5, aspect=5)
@@ -66,7 +73,7 @@ y = np.linspace(-np.pi, np.pi, window_height)
 x = np.linspace(-np.pi, np.pi, window_width)
 X, Y = np.meshgrid(x, y)
 surf = ax4.plot_surface(X, Y, np.log(BetterSpecAnal(filtered)), cmap=plt.cm.coolwarm)
-ax4.set_xlabel('$\mu$ axis')
+ax4.set_xlabel('$\\mu$ axis')
 ax4.set_ylabel('$\\nu$ axis')
 ax4.set_title('Estimate of log(Power Spectral Density)')
 fig4.colorbar(surf, shrink=0.5, aspect=5)
