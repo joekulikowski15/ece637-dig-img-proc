@@ -1,0 +1,231 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{hyperref}
+\graphicspath{ {./images/} }
+\usepackage{amsmath}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{tikz,lipsum,lmodern}
+\usepackage[most]{tcolorbox}
+\usepackage{biblatex} %Imports biblatex package
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{ECE637: Laboratory 2, 2-D Random Processes}
+\author{Joseph K. Kulikowski \\
+Purdue University}
+\date{January 24, 2025}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\listoffigures
+\lstlistoflistings
+\newpage
+
+\section{Section 1 Report: Power Spectral Density of an Image}
+\subsection{The grayscale image \textit{img04g.tif}.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{img04g.jpg}
+    \caption{The grayscale image \textit{img04g.tif}.}
+    \label{fig:1}
+\end{figure}
+
+\newpage
+\subsection{The power spectral density plots for block sizes of 64 × 64, 128 × 128, and 256 × 256.}
+As seen in Figures (\ref{fig:2} \ref{fig:3},\ref{fig:4}), and as noted in \href{https://engineering.purdue.edu/~bouman/ece637/notes/pdf/RandProc.pdf}{Random Process Notes, page 5}, the power spectral density estimate remains noisy even as we increase our block size.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{PowerSpec64.jpg}
+    \caption{log(Power Spectral Density) for block size 64 x 64.}
+    \label{fig:2}
+\end{figure}
+\newpage
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{PowerSpec128.jpg}
+    \caption{log(Power Spectral Density) for block size 128 x 128.}
+    \label{fig:3}
+\end{figure}
+\newpage
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{PowerSpec256.jpg}
+    \caption{log(Power Spectral Density) for block size 256 x 256.}
+    \label{fig:4}
+\end{figure}
+
+\newpage
+\subsection{The improved Power Spectral Density Estimate}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{BetterSpecAnalP1.jpg}
+    \caption{Estimate of log(Power Spectral Density) from BetterSpecAnal.py.}
+    \label{fig:5}
+\end{figure}
+
+\newpage
+\subsection{My code for BetterSpecAnal(x) function.}
+To preface my function, it has more arguments, and takes a more direct approach than specified. I am sure the open-ended nature of this section is intentional.\\
+\\
+Here is the direct instructions for the creation of the function:
+\\
+Write a Python function, def BetterSpecAnal(x), which returns a better estimate of the
+power spectral density of the 2-D array x. Your new py-file should:
+\begin{itemize}
+    \item Use 25 non-overlapping image windows of size 64 × 64. These windows should be selected from the center of x.
+    \begin{itemize}
+        \item I named my 2-D array input $img$, for obvious reasons. I also made optional input arguments $n\_windows=25$, $window\_height=64$, and $window\_width=64$.
+        \item The above instructions are also non-specific, so I specified a more systematic way to define the windows. Since the input image is even-shaped, the center of the image is in between pixels. My "center" is 0.5 pixels down and to the right. I also define a grid of windows that begins with a window at the center of the image, and is $\sqrt{n\_windows}$ tall and wide.
+    \end{itemize}
+    \item Multiply each 64 × 64 window by a 2-D separable Hamming window.
+    \item Compute the squared DFT magnitude for each window.
+    \item Average this power spectral density across the 25 windows.
+    \item Display a mesh plot of the log of the estimated power spectral density.
+\end{itemize}
+My code is displayed on the next page in Listing \ref{lst:BetterSpecAnal.py}.
+\newpage
+\begin{lstlisting}[language=python, caption=BetterSpecAnal.py, label={lst:BetterSpecAnal.py}]
+import numpy as np
+
+def BetterSpecAnal(img:np.ndarray, n_windows: int=25, window_height: int=64, window_width: int=64)-> np.ndarray:
+    """
+    BetterSpecAnal(img, n_windows, window_height, window_width)
+    Performs the estimate of the Power Spectral Density (psd) of the input img via block averaging as described here:
+    -    https://engineering.purdue.edu/~bouman/ece637/notes/pdf/RandProc.pdf
+    Author: Joseph K. Kulikowski
+
+    Parameters
+    ----------
+    img : numpy.ndarray
+        Image to perform the estimate of the Power Spectral Density of
+    n_windows : int=25
+        Number of windows to perform block averaging by. Blocks will be taken out of img in a
+        int(sqrt(n_windows))xint(sqrt(n_windows)) grid around the center of the image.
+    window_height : int=64
+        Number of rows in each window.
+    window_width : int=64
+        Number of columns in each window
+    
+    Returns
+    -------
+    psd : numpy.ndarray
+        The estimate of the power spectral density of the image.
+
+    """
+    # I decide that this will be a sqrt(n_windows)xsqrt(n_windows) set of blocks starting at the center pixel.
+
+    im_height, im_width = np.size(img, 0), np.size(img, 1)
+
+    # Since our image is even shaped in both height and width, I will define the "Center" of the image to be 
+    # 1/2 pixels right and down from the true center of the image, which is between 4 pixels.
+    center_y, center_x = im_height//2, im_width//2
+
+    # allocate a 3D array for our window_height x window_width x n_windows to perform fft/averaging over.
+    windows = np.zeros(shape=(window_height, window_width, n_windows))*np.nan
+    # make all NaN for a sanity check assertion after assignment.
+
+    # Counter for array sizes
+    count = 0
+    # define each window by 2D hamming window as described.
+    W = np.outer(np.hamming(window_height), np.hamming(window_width))
+
+    for iwindow_y in range(-int(np.sqrt(n_windows))//2 + 1, int(np.sqrt(n_windows))//2 + 1):
+        for iwindow_x in range(-int(np.sqrt(n_windows))//2 + 1, int(np.sqrt(n_windows))//2 + 1):
+            new_center_y = center_y + (iwindow_y * window_height//2)
+            new_center_x = center_x + (iwindow_x * window_width//2)
+            y_start = new_center_y - window_height//2
+            y_end = new_center_y + window_height//2
+            x_start = new_center_x - window_width//2
+            x_end = new_center_x + window_width//2
+
+            # populate our windows array with our image in each window
+            windows[:,:,count] = img[y_start:y_end, x_start:x_end]
+            # Ensure we've assigned all the elements in this slice.
+            assert(~np.any(np.isnan(windows[:,:,count])))
+            # Multiply each window by 2D hamming window as described.
+            operated_on = W * windows[:,:,count]
+            # Take 2D FFT, shift to -pi,pi, square it
+            operated_on = np.fft.fftshift(np.abs(np.fft.fft2(operated_on)))**2
+            windows[:,:,count] = operated_on
+            # push our count up
+            count = count + 1
+
+    # We now have our 25 windows to average over.
+    assert(~np.any(np.isnan(windows)))
+    psd = np.sum(windows, 2)/np.size(windows, 2)
+    return psd
+\end{lstlisting}
+\newpage
+\section{Section 2 Report: Power Spectral Density of a 2-D AR Process}
+\subsection{The image $255 ∗ (x + 0.5)$.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{rand_scaledp2.jpg}
+    \caption{The image $255 ∗ (x + 0.5)$.}
+    \label{fig:6}
+\end{figure}
+\newpage
+\subsection{The image y + 127.}
+To derive the recursive filter, we start with the IIR Filter with the transfer function:
+\begin{align}
+    H(z_1,z_2) = \frac{3}{1-0.99(z_1^{-1} + z_2^{-1})+ 0.9801 z_1^{-1}z_2^{-1}}
+\end{align}
+Noting that $H(z_1,z_2) = \frac{Y(z_1,z_2)}{X(z_1,z_2)}$, we can separate the transfer function, and take the inverse 2-D Z-Transform to arrive at a recursion relation.
+\begin{align}
+    \begin{split}
+        3 X(z_1,z_2) &= Y(z_1,z_2)[1-0.99(z_1^{-1} + z_2^{-1})+ 0.9801 z_1^{-1}z_2^{-1}]\\
+        \implies y(m,n) &= 3 x(m,n) + 0.99 (y(m-1,n)+y(m,n-1)) - 0.9801 y(m-1,n-1)
+    \end{split}
+\end{align}
+We then apply to the image in Figure \ref{fig:6} to get:
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{y_plus_127.jpg}
+    \caption{The image y + 127.}
+    \label{fig:7}
+\end{figure}
+\newpage
+\subsection{A mesh plot of the function $S_y(e^{j\mu}, e^{j\nu})$.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{theoretical_psd_p2.jpg}
+    \caption{A mesh plot of the function $S_y(e^{j\mu}, e^{j\nu})$.}
+    \label{fig:8}
+\end{figure}
+\newpage
+\subsection{A mesh plot of the log of the estimated power spectral density of y using \textit{BetterSpecAnal(y)}.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{BetterSpecAnalP2.jpg}
+    \caption{A mesh plot of the log of the estimated power spectral density of y using \textit{BetterSpecAnal(y)}.}
+    \label{fig:9}
+\end{figure}
+
+\end{document}
