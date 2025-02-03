@@ -105,7 +105,7 @@ int main(int argc, char **argv){
 }
 
 void error(char *name){
-    printf("usage:  %s  image.tiff row col threshold\n\n",name);
+    printf("usage:  %s  image.tiff threshold\n\n",name);
     printf("this program reads in a grayscale TIFF image.\n");
     printf("It finds the connected sets from a pixel at \n");
     printf("row col for a threshold.\n");
