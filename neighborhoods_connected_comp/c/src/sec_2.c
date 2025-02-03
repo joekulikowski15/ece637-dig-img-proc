@@ -61,6 +61,7 @@ int main(int argc, char **argv){
                 ConnectedSet(seed, T, input_img.mono, input_img.width, input_img.height,
                              ClassLabel, seg, &NumConPixels);
                 if(NumConPixels >100){
+                    /* Increment class label. */
                     ClassLabel++;
                 }else{
                      NumConPixels2 = 0;
